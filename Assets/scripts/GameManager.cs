@@ -5,17 +5,30 @@ using System.Text;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour {
+    const int MAX_LEVEL = 999;
+
     public string fileGravity;
     public string fileGrading;
 
     private SortedList<int, int> gravity = new SortedList<int, int>();
     private SortedList<string, int> grading = new SortedList<string, int>();
 
+    public GameObject scoreDisplay;
+    public GameObject levelDisplay;
+
     public int areDelay;
     public int dasDelay;
     public int lockDelay;
     public int clearDelay;
     public int level;
+    private int score;
+    private int combo;
+    
+
+    // Frame counters
+    private int dasFrames;
+    private int lockFrames;
+    private int softFrames;
     private float gFrames;
 
     private Spawner bag;
@@ -65,55 +78,138 @@ public class GameManager : MonoBehaviour {
 
         activePiece = Instantiate(bag.SelectNext(), board.Spawn, Quaternion.identity);
         nextPiece = Instantiate(bag.SelectNext(), board.NextDisplay, Quaternion.identity);
+        level = 1;
+    }
+
+    private void UpdateGUI()
+    {
+        levelDisplay.GetComponent<GUIText>().text = level.ToString().PadLeft(3, '0');
+        scoreDisplay.GetComponent<GUIText>().text = score.ToString().PadLeft(6, '0'); 
+    }
+
+    private void ClockwiseRotation(Tetromino active)
+    {
+        if (!active.RotateClockwiseSafe())
+        {
+            if (!(active.ShiftRightSafe() && active.RotateClockwiseSafe()))
+            {
+                active.ShiftLeftSafe();
+                active.RotateClockwiseSafe();
+            }
+        };
+    }
+
+    private void CounterClockwiseRotation(Tetromino active)
+    {
+        if (!active.RotateCounterClockwiseSafe())
+        {
+            if (!(active.ShiftRightSafe() && active.RotateCounterClockwiseSafe()))
+            {
+                active.ShiftLeftSafe();
+                active.RotateCounterClockwiseSafe();
+            }
+        }
     }
 
     private void Update()
     {
         Tetromino active = ActiveTetromino();
-        ApplyGravity();
+        bool softDrop = false;
+        
+        float shift = Input.GetAxisRaw("Horizontal");
+        // Update DAS
+        dasFrames = shift != 0 ? dasFrames += 1 : dasFrames = 0;
 
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            active.ShiftLeftSafe();
-        }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        bool shiftRight = (dasFrames == 1 || dasFrames > dasDelay) && shift == 1;
+        bool shiftLeft = (dasFrames == 1 || dasFrames > dasDelay) && shift == -1;
+
+        if (shiftRight)
         {
             active.ShiftRightSafe();
         }
+        else if (shiftLeft)
+        {
+            active.ShiftLeftSafe();
+        }
         else if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            active.RotateClockwiseSafe();
+            ClockwiseRotation(active);
         }
         else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            active.RotateCounterClockwiseSafe();
+            CounterClockwiseRotation(active);
         }
-        else if (Input.GetKeyDown(KeyCode.Space))
+        else if (Input.GetAxisRaw("Vertical") == -1)
         {
             active.Drop(true);
+            softDrop = true;
+            softFrames++;
         }
 
-        if (active.IsLocked())
+        ApplyGravity();
+        if (active.IsLocked()) // Drop has collision
         {
-            field.Add(activePiece);
-            activePiece = Instantiate(nextPiece, board.Spawn, Quaternion.identity);
-            Destroy(nextPiece);
-            nextPiece = Instantiate(bag.SelectNext(), board.NextDisplay, Quaternion.identity);
-            Grid.deleteFullRows();
+            lockFrames++;
 
-
-            // Cleanup
-            for (int i = 0; i < field.Count; ++i)
+            if (lockFrames >= lockDelay || softDrop)
             {
-                GameObject terrain = field[i];
-                foreach (Transform child in terrain.GetComponentsInChildren<Transform>(false))
+                UpdateScore(Grid.DeleteFullRows());
+                softFrames = 0;
+
+                field.Add(activePiece);
+                SpawnNextPiece();
+                CleanField();
+            }
+        }
+        else
+        {
+            lockFrames = 0;
+        }
+
+        UpdateGUI();
+    }
+
+    private void SpawnNextPiece()
+    {
+        activePiece = Instantiate(nextPiece, board.Spawn, Quaternion.identity);
+        Destroy(nextPiece);
+        nextPiece = Instantiate(bag.SelectNext(), board.NextDisplay, Quaternion.identity);
+
+        // Increment if !99->100 && !998->999 
+        if (level+1 % 100 != 0 && level+1 != MAX_LEVEL)
+        {
+            level++;
+        } 
+    }
+
+    private void UpdateScore(int lines)
+    {
+        level += lines;
+        if (lines > 0)
+        {
+            int bravo = Grid.Unoccupied() ? 4 : 1;
+            float bScore = Mathf.Ceil((level + lines) / 4) + softFrames;
+            combo += (2 * lines) - 2;
+            score += (int)bScore * lines * ((2 * lines) - 1) * combo * bravo;
+        } 
+        else
+        {
+            combo = 1;
+        }
+    }
+
+    private void CleanField()
+    {
+        for (int i = 0; i < field.Count; ++i)
+        {
+            GameObject terrain = field[i];
+            foreach (Transform child in terrain.GetComponentsInChildren<Transform>(false))
+            {
+                if (child.tag == "Rotation" && child.childCount == 0)
                 {
-                    if (child.tag == "Rotation" && child.childCount == 0)
-                    {
-                        Debug.Log("Cleaning up " + terrain);
-                        field.Remove(terrain);
-                        Destroy(terrain);
-                    }
+                    Debug.Log("Cleaning up " + terrain);
+                    field.Remove(terrain);
+                    Destroy(terrain);
                 }
             }
         }

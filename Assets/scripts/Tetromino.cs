@@ -39,7 +39,7 @@ public class Tetromino : MonoBehaviour {
         }
     }
 
-    public void ShiftRightSafe()
+    public bool ShiftRightSafe()
     {
         // Modify position
         ShiftRight();
@@ -52,7 +52,10 @@ public class Tetromino : MonoBehaviour {
         else
         {
             ShiftLeft();
+            return false;
         }
+
+        return true;
     }
 
     private void ShiftLeft()
@@ -64,7 +67,7 @@ public class Tetromino : MonoBehaviour {
         }
     }
 
-    public void ShiftLeftSafe()
+    public bool ShiftLeftSafe()
     {
         // Modify position
         ShiftLeft();
@@ -77,7 +80,10 @@ public class Tetromino : MonoBehaviour {
         else
         {
             ShiftRight();
+            return false;
         }
+
+        return true;
     }
 
     private void RotateClockwise()
@@ -94,7 +100,7 @@ public class Tetromino : MonoBehaviour {
         piece.SetActive(true);
     }
 
-    public void RotateClockwiseSafe()
+    public bool RotateClockwiseSafe()
     {
         // Modify position
         RotateClockwise();
@@ -107,7 +113,10 @@ public class Tetromino : MonoBehaviour {
         else
         {
             RotateCounterClockwise();
+            return false;
         }
+
+        return true;
     }
 
     private void RotateCounterClockwise()
@@ -124,7 +133,7 @@ public class Tetromino : MonoBehaviour {
         piece.SetActive(true);
     }
 
-    public void RotateCounterClockwiseSafe()
+    public bool RotateCounterClockwiseSafe()
     {
         // Modify position
         RotateCounterClockwise();
@@ -137,7 +146,10 @@ public class Tetromino : MonoBehaviour {
         else
         {
             RotateClockwise();
+            return false;
         }
+
+        return true;
     }
 
 
@@ -150,6 +162,7 @@ public class Tetromino : MonoBehaviour {
         // See if valid
         if (IsValidGridPos())
         {
+            Locked = false;
             UpdateGrid();
         }
         else

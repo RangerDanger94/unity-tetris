@@ -39,7 +39,7 @@ public class Grid : MonoBehaviour {
                 v.y >= 0);
     }
 
-    public static void deleteRow(int y)
+    public static void DeleteRow(int y)
     {
         for (int x = 0; x < w; ++x)
         {
@@ -48,7 +48,7 @@ public class Grid : MonoBehaviour {
         }
     }
 
-    public static void decreaseRow(int y)
+    public static void DecreaseRow(int y)
     {
         for(int x = 0; x < w; ++x)
         {
@@ -64,15 +64,15 @@ public class Grid : MonoBehaviour {
         }
     }
 
-    public static void decreaseRowsAbove(int y)
+    public static void DecreaseRowsAbove(int y)
     {
         for (int i = y; i < h; ++i)
         {
-            decreaseRow(i);
+            DecreaseRow(i);
         }
     }
 
-    public static bool isRowFull(int y)
+    public static bool IsRowFull(int y)
     {
         for (int x = 0; x < w; ++x)
         {
@@ -85,16 +85,37 @@ public class Grid : MonoBehaviour {
         return true;
     }
 
-    public static void deleteFullRows()
+    public static bool Unoccupied()
     {
+        for (int x = 0; x < w; ++x)
+        {
+            for (int y = 0; y < h; ++y)
+            {
+                if (grid[x, y] != null)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // Delete full rows and return number of rows deleted
+    public static int DeleteFullRows()
+    {
+        int deleted = 0;
         for (int y = 0; y < h; ++y)
         {
-            if (isRowFull(y))
+            if (IsRowFull(y))
             {
-                deleteRow(y);
-                decreaseRowsAbove(y + 1);
+                deleted++;
+                DeleteRow(y);
+                DecreaseRowsAbove(y + 1);
                 --y;
             }
         }
+
+        return deleted;
     }
 }
