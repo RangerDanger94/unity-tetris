@@ -135,10 +135,10 @@ public class GameManager : MonoBehaviour {
         {
             ClockwiseRotation(active);
         }
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            CounterClockwiseRotation(active);
-        }
+        //else if (Input.GetKeyDown(KeyCode.DownArrow))
+        //{
+        //    CounterClockwiseRotation(active);
+        //}
         else if (Input.GetAxisRaw("Vertical") == -1)
         {
             active.Drop(true);

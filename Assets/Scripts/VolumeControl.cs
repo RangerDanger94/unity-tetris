@@ -20,6 +20,4 @@ public class VolumeControl : MonoBehaviour {
     {
         mixer.SetFloat("EffectsVolume", level);
     }
-
-    
 }
